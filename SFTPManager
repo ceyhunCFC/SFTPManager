@@ -1,0 +1,65 @@
+using UnityEngine;
+using Renci.SshNet;
+using System;
+using System.IO;
+
+public class SFTPManager : MonoBehaviour
+{
+    private string host = "i3q.f89.myftpupload.com"; // Sadece domain adı
+    private int port = 22; // Port numarası ekleyin, genellikle 22
+    private string username = "CKNHie@uipiS6L";
+    private string password = "BcWFdvNeHTfI4Z";
+    private string remoteDirectory = "/home/CKNHie@uipiS6L/html/remote/path";
+    private string localFilePath = @"D:\Indirilenler\test.jpg";
+    private string remoteFilePath = "/home/CKNHie@uipiS6L/html/remote/path/test.jpg"; // Uygun dosya adı ile güncelledik
+
+ void Start()
+    {
+        if (File.Exists(localFilePath))
+        {
+            UploadFile(localFilePath, remoteFilePath);
+        }
+        else
+        {
+            Debug.LogError("Local file not found: " + localFilePath);
+        }
+    }
+
+    void UploadFile(string localPath, string remotePath)
+    {
+        using (var sftp = new SftpClient(host, port, username, password))
+        {
+            try
+            {
+                sftp.Connect();
+                if (sftp.IsConnected)
+                {
+                    // Uzaktaki dizinin var olup olmadığını kontrol edin ve gerekirse oluşturun
+                    if (!sftp.Exists(remoteDirectory))
+                    {
+                        sftp.CreateDirectory(remoteDirectory);
+                        Debug.Log("Remote directory created: " + remoteDirectory);
+                    }
+
+                    using (var fileStream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
+                    {
+                        sftp.UploadFile(fileStream, remotePath, true);
+                        Debug.Log("File uploaded successfully to: " + remotePath);
+                    }
+                }
+                else
+                {
+                    Debug.LogError("Could not connect to the server.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("Error uploading file: " + ex.Message);
+            }
+            finally
+            {
+                sftp.Disconnect();
+            }
+        }
+    }
+}
